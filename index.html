@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>O que acontece quando eu acesso a rede?</title>
+  <style>
+    :root{
+      --bg:#f5f7fb;
+      --card:#ffffff;
+      --text:#172033;
+      --muted:#64748b;
+      --line:#dbe3ef;
+      --primary:#1d4ed8;
+      --primary-2:#2563eb;
+      --accent:#f59e0b;
+      --ok:#15803d;
+      --bad:#b91c1c;
+      --soft:#eef4ff;
+      --shadow:0 12px 35px rgba(15,23,42,.08);
+      --radius:20px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        linear-gradient(rgba(148,163,184,.10) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(148,163,184,.10) 1px, transparent 1px),
+        var(--bg);
+      background-size:28px 28px;
+      color:var(--text);
+    }
+    .container{max-width:1180px;margin:auto;padding:28px 18px 64px}
+    .hero{
+      background:linear-gradient(135deg,#0f172a,#1e3a8a 60%,#2563eb);
+      color:#fff;border-radius:28px;padding:34px;box-shadow:var(--shadow);
+      position:relative;overflow:hidden;
+    }
+    .hero:after{
+      content:"";position:absolute;width:260px;height:260px;border-radius:50%;
+      background:rgba(255,255,255,.08);right:-80px;top:-70px;
+    }
+    .eyebrow{font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;opacity:.8}
+    h1{font-size:clamp(28px,5vw,48px);line-height:1.05;margin:10px 0 12px}
+    .hero p{max-width:760px;font-size:16px;line-height:1.6;color:#dbeafe;margin:0}
+    .meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+    .chip{padding:8px 12px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);border-radius:999px;font-size:13px}
+    .toolbar{display:grid;grid-template-columns:1fr auto;gap:14px;margin:22px 0}
+    .namebox,.scorebox{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 16px;box-shadow:var(--shadow)}
+    .namebox label{font-size:12px;color:var(--muted);display:block;margin-bottom:5px}
+    .namebox input{width:100%;border:0;outline:0;font-size:16px;color:var(--text)}
+    .scorebox{display:flex;align-items:center;gap:16px;min-width:240px;justify-content:center}
+    .scorebox strong{font-size:24px;color:var(--primary)}
+    .progress{height:8px;background:#e5e7eb;border-radius:999px;overflow:hidden;margin-top:10px}
+    .progress > div{height:100%;width:0;background:linear-gradient(90deg,var(--primary),#60a5fa);transition:.3s}
+    .intro{
+      display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:18px 0 26px;
+    }
+    .mini{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:var(--shadow)}
+    .mini strong{display:block;margin-bottom:5px}
+    .mini span{font-size:14px;color:var(--muted);line-height:1.5}
+    .section-title{font-size:24px;margin:32px 0 8px}
+    .section-sub{color:var(--muted);margin:0 0 18px;line-height:1.5}
+    .scenario{
+      background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+      box-shadow:var(--shadow);padding:22px;margin:16px 0;
+    }
+    .scenario-head{display:flex;gap:14px;align-items:flex-start;margin-bottom:18px}
+    .num{width:42px;height:42px;flex:0 0 42px;border-radius:13px;background:var(--soft);color:var(--primary);display:grid;place-items:center;font-weight:900}
+    .scenario h3{margin:0 0 5px;font-size:20px}
+    .scenario .story{margin:0;color:var(--muted);line-height:1.5}
+    .grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+    .field label{display:block;font-size:12px;font-weight:800;color:#475569;margin:0 0 6px}
+    select, textarea{
+      width:100%;border:1px solid #cbd5e1;border-radius:12px;background:#fff;padding:11px 12px;
+      font:inherit;color:var(--text);outline:none;
+    }
+    select:focus,textarea:focus{border-color:#60a5fa;box-shadow:0 0 0 3px rgba(37,99,235,.10)}
+    textarea{min-height:84px;resize:vertical}
+    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+    button{
+      border:0;border-radius:12px;padding:11px 16px;font-weight:800;cursor:pointer;
+      transition:.18s; font-size:14px;
+    }
+    .btn-primary{background:var(--primary);color:#fff}
+    .btn-primary:hover{background:#1e40af;transform:translateY(-1px)}
+    .btn-soft{background:#eff6ff;color:#1d4ed8}
+    .btn-ghost{background:#f8fafc;color:#334155;border:1px solid var(--line)}
+    .feedback{display:none;margin-top:14px;padding:12px 14px;border-radius:12px;font-size:14px;line-height:1.5}
+    .feedback.ok{display:block;background:#ecfdf3;color:#166534;border:1px solid #bbf7d0}
+    .feedback.bad{display:block;background:#fef2f2;color:#991b1b;border:1px solid #fecaca}
+    .multi-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .flow-box{background:#f8fafc;border:1px dashed #cbd5e1;border-radius:15px;padding:15px}
+    .flow-box h4{margin:0 0 10px}
+    .order-area{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}
+    .order-item{
+      background:#fff;border:1px solid #cbd5e1;border-radius:12px;padding:10px 14px;
+      cursor:grab;font-weight:800;user-select:none;
+    }
+    .order-item.dragging{opacity:.45}
+    .final{
+      border:2px solid #fbbf24;background:linear-gradient(180deg,#fffdf5,#fff);
+    }
+    .final .num{background:#fff7d6;color:#b45309}
+    .final-question{margin-top:14px}
+    .footer-actions{
+      position:sticky;bottom:12px;background:rgba(255,255,255,.94);backdrop-filter:blur(8px);
+      border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:12px;
+      display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:28px;
+    }
+    .small{font-size:12px;color:var(--muted)}
+    .hidden{display:none!important}
+    @media (max-width:900px){
+      .grid{grid-template-columns:1fr 1fr}
+      .intro,.multi-grid{grid-template-columns:1fr}
+      .toolbar{grid-template-columns:1fr}
+    }
+    @media (max-width:560px){
+      .grid{grid-template-columns:1fr}
+      .hero{padding:26px 22px}
+      .scenario{padding:18px}
+      .footer-actions{align-items:stretch;flex-direction:column}
+      .footer-actions button{width:100%}
+    }
+    @media print{
+      body{background:#fff}
+      .hero{background:#fff;color:#000;border:1px solid #ddd;box-shadow:none}
+      .hero p{color:#333}
+      .toolbar,.footer-actions,.actions{display:none!important}
+      .scenario,.mini{box-shadow:none;break-inside:avoid}
+      .container{max-width:none;padding:0}
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <section class="hero">
+      <div class="eyebrow">Encontro 4 • Protocolos TCP/IP</div>
+      <h1>O que acontece quando eu acesso a rede?</h1>
+      <p>Analise situações do cotidiano de uma rede e descubra quais protocolos, serviços, portas e formas de transporte estão envolvidos em cada comunicação.</p>
+      <div class="meta">
+        <span class="chip">Atividade aplicada</span>
+        <span class="chip">Individual ou dupla</span>
+        <span class="chip">Tempo sugerido: 40–60 min</span>
+        <span class="chip">Diagnóstico + raciocínio</span>
+      </div>
+    </section>
+
+    <div class="toolbar">
+      <div class="namebox">
+        <label for="student">Aluno(a) / Dupla</label>
+        <input id="student" type="text" placeholder="Digite o nome aqui" />
+        <div class="progress"><div id="progressBar"></div></div>
+      </div>
+      <div class="scorebox">
+        <div>
+          <div class="small">Pontuação atual</div>
+          <strong id="score">0/7</strong>
+        </div>
+      </div>
+    </div>
+
+    <section class="intro">
+      <div class="mini"><strong>1. Observe a situação</strong><span>Leia o problema antes de pensar em portas ou protocolos.</span></div>
+      <div class="mini"><strong>2. Relacione os conceitos</strong><span>Identifique protocolo, função, serviço, transporte e porta.</span></div>
+      <div class="mini"><strong>3. Justifique</strong><span>Nos desafios com vários protocolos, explique a ordem dos eventos.</span></div>
+    </section>
+
+    <h2 class="section-title">Parte 1 — Um protocolo em foco</h2>
+    <p class="section-sub">Resolva os cinco cenários abaixo. Cada cenário vale 1 ponto.</p>
+
+    <div id="singleScenarios"></div>
+
+    <h2 class="section-title">Parte 2 — Mais de um protocolo na mesma comunicação</h2>
+    <p class="section-sub">Agora analise situações em que vários protocolos participam do mesmo processo.</p>
+
+    <section class="scenario">
+      <div class="scenario-head">
+        <div class="num">6</div>
+        <div>
+          <h3>Acesso a um site pelo nome</h3>
+          <p class="story">Um usuário digita <strong>www.empresa.local</strong> no navegador. O computador conhece a rede, mas ainda não sabe qual é o endereço IP desse servidor.</p>
+        </div>
+      </div>
+      <div class="multi-grid">
+        <div class="flow-box">
+          <h4>Organize a sequência</h4>
+          <p class="small">Arraste os blocos para representar a ordem lógica.</p>
+          <div class="order-area" id="order6">
+            <div class="order-item" draggable="true" data-value="HTTPS">HTTPS</div>
+            <div class="order-item" draggable="true" data-value="DNS">DNS</div>
+            <div class="order-item" draggable="true" data-value="TCP">TCP</div>
+          </div>
+        </div>
+        <div class="field">
+          <label>Explique em poucas palavras o papel de cada etapa.</label>
+          <textarea id="explain6" placeholder="Ex.: primeiro ..., depois ..."></textarea>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn-primary" onclick="checkOrder6()">Verificar sequência</button>
+      </div>
+      <div id="feedback6" class="feedback"></div>
+    </section>
+
+    <section class="scenario final">
+      <div class="scenario-head">
+        <div class="num">7</div>
+        <div>
+          <h3>Desafio final — Do Wi-Fi até a página Web</h3>
+          <p class="story">Um notebook acabou de entrar em uma rede Wi-Fi desconhecida. O usuário digita <strong>https://intranet.empresa.com</strong>. Analise a comunicação completa até a página ser exibida.</p>
+        </div>
+      </div>
+
+      <div class="flow-box">
+        <h4>Ordene os protocolos/etapas</h4>
+        <p class="small">Arraste os blocos para a sequência que faz mais sentido.</p>
+        <div class="order-area" id="order7">
+          <div class="order-item" draggable="true" data-value="HTTPS">HTTPS</div>
+          <div class="order-item" draggable="true" data-value="DHCP">DHCP</div>
+          <div class="order-item" draggable="true" data-value="TCP">TCP</div>
+          <div class="order-item" draggable="true" data-value="DNS">DNS</div>
+        </div>
+      </div>
+
+      <div class="final-question">
+        <div class="field">
+          <label>Explique o que acontece em cada etapa.</label>
+          <textarea id="explain7" placeholder="Descreva a sequência desde a entrada na rede até o acesso à página."></textarea>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn-primary" onclick="checkOrder7()">Verificar desafio</button>
+        <button class="btn-soft" onclick="showHint()">Dica</button>
+      </div>
+      <div id="hint7" class="feedback">Pense assim: <strong>primeiro preciso entrar na rede → depois descobrir o IP do nome → depois estabelecer a conexão → finalmente solicitar a página.</strong></div>
+      <div id="feedback7" class="feedback"></div>
+    </section>
+
+    <div class="footer-actions">
+      <div>
+        <strong id="statusText">Comece pelos cenários acima.</strong>
+        <div class="small">As respostas são verificadas localmente no navegador.</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn-ghost" onclick="window.print()">Imprimir</button>
+        <button class="btn-ghost" onclick="resetAll()">Reiniciar</button>
+        <button class="btn-primary" onclick="finalize()">Finalizar atividade</button>
+      </div>
+    </div>
+  </main>
+
+<script>
+const scenarios = [
+  {
+    title:"Acessar um site",
+    story:"Você abre o navegador e acessa um site institucional usando HTTP ou HTTPS.",
+    protocol:["HTTP / HTTPS","HTTP","HTTPS"],
+    func:"Transferência de conteúdo Web",
+    service:"Web",
+    transport:"TCP",
+    port:"80 / 443",
+    options:{
+      protocol:["HTTP / HTTPS","FTP","ICMP","DHCP","SMTP"],
+      func:["Transferência de conteúdo Web","Teste de conectividade","Atribuição automática de IP","Transferência de arquivos","Envio de e-mail"],
+      service:["Web","Diagnóstico","DHCP","FTP","Correio eletrônico"],
+      transport:["TCP","UDP","Não se aplica"],
+      port:["80 / 443","67 / 68","20 / 21","25 / 587","Não se aplica"]
+    }
+  },
+  {
+    title:"Realizar um ping",
+    story:"Você quer verificar se outro computador está acessível na rede e executa o comando ping.",
+    protocol:["ICMP"],
+    func:"Teste de conectividade",
+    service:"Diagnóstico",
+    transport:"Não se aplica",
+    port:"Não se aplica",
+    options:{
+      protocol:["ICMP","HTTP / HTTPS","DHCP","FTP","SMTP"],
+      func:["Teste de conectividade","Transferência de conteúdo Web","Atribuição automática de IP","Transferência de arquivos","Envio de e-mail"],
+      service:["Diagnóstico","Web","DHCP","FTP","Correio eletrônico"],
+      transport:["Não se aplica","TCP","UDP"],
+      port:["Não se aplica","80 / 443","67 / 68","20 / 21","25 / 587"]
+    }
+  },
+  {
+    title:"Obter endereço IP automaticamente",
+    story:"Ao entrar na rede, o computador recebe endereço IP, máscara, gateway e outros parâmetros automaticamente.",
+    protocol:["DHCP"],
+    func:"Atribuição automática de IP",
+    service:"DHCP",
+    transport:"UDP",
+    port:"67 / 68",
+    options:{
+      protocol:["DHCP","DNS","HTTP / HTTPS","FTP","ICMP"],
+      func:["Atribuição automática de IP","Resolução de nomes","Transferência de conteúdo Web","Transferência de arquivos","Teste de conectividade"],
+      service:["DHCP","DNS","Web","FTP","Diagnóstico"],
+      transport:["UDP","TCP","Não se aplica"],
+      port:["67 / 68","53","80 / 443","20 / 21","Não se aplica"]
+    }
+  },
+  {
+    title:"Transferir arquivos por FTP",
+    story:"Um usuário precisa enviar um arquivo para um servidor FTP da empresa.",
+    protocol:["FTP"],
+    func:"Transferência de arquivos",
+    service:"FTP",
+    transport:"TCP",
+    port:"20 / 21",
+    options:{
+      protocol:["FTP","HTTP / HTTPS","ICMP","DHCP","SMTP"],
+      func:["Transferência de arquivos","Transferência de conteúdo Web","Teste de conectividade","Atribuição automática de IP","Envio de e-mail"],
+      service:["FTP","Web","Diagnóstico","DHCP","Correio eletrônico"],
+      transport:["TCP","UDP","Não se aplica"],
+      port:["20 / 21","80 / 443","67 / 68","25 / 587","Não se aplica"]
+    }
+  },
+  {
+    title:"Enviar um e-mail",
+    story:"Você envia uma mensagem pelo cliente de e-mail para o servidor de correio da empresa.",
+    protocol:["SMTP"],
+    func:"Envio de e-mail",
+    service:"Correio eletrônico",
+    transport:"TCP",
+    port:"25 / 587",
+    options:{
+      protocol:["SMTP","FTP","ICMP","DHCP","HTTP / HTTPS"],
+      func:["Envio de e-mail","Transferência de arquivos","Teste de conectividade","Atribuição automática de IP","Transferência de conteúdo Web"],
+      service:["Correio eletrônico","FTP","Diagnóstico","DHCP","Web"],
+      transport:["TCP","UDP","Não se aplica"],
+      port:["25 / 587","20 / 21","67 / 68","80 / 443","Não se aplica"]
+    }
+  }
+];
+
+const state = {correct:new Set()};
+
+function opt(list){
+  return '<option value="">Selecione...</option>' + list.map(v=>`<option>${v}</option>`).join('');
+}
+
+function render(){
+  const host=document.getElementById('singleScenarios');
+  host.innerHTML=scenarios.map((s,i)=>`
+    <section class="scenario" id="scenario-${i}">
+      <div class="scenario-head">
+        <div class="num">${i+1}</div>
+        <div>
+          <h3>${s.title}</h3>
+          <p class="story">${s.story}</p>
+        </div>
+      </div>
+      <div class="grid">
+        <div class="field"><label>Protocolo</label><select id="p-${i}">${opt(s.options.protocol)}</select></div>
+        <div class="field"><label>Função</label><select id="f-${i}">${opt(s.options.func)}</select></div>
+        <div class="field"><label>Serviço</label><select id="s-${i}">${opt(s.options.service)}</select></div>
+        <div class="field"><label>TCP ou UDP?</label><select id="t-${i}">${opt(s.options.transport)}</select></div>
+        <div class="field"><label>Porta padrão</label><select id="o-${i}">${opt(s.options.port)}</select></div>
+      </div>
+      <div class="actions"><button class="btn-primary" onclick="checkScenario(${i})">Verificar resposta</button></div>
+      <div class="feedback" id="fb-${i}"></div>
+    </section>
+  `).join('');
+}
+render();
+
+function checkScenario(i){
+  const s=scenarios[i];
+  const vals={
+    protocol:document.getElementById(`p-${i}`).value,
+    func:document.getElementById(`f-${i}`).value,
+    service:document.getElementById(`s-${i}`).value,
+    transport:document.getElementById(`t-${i}`).value,
+    port:document.getElementById(`o-${i}`).value
+  };
+  const ok=s.protocol.includes(vals.protocol) && vals.func===s.func && vals.service===s.service && vals.transport===s.transport && vals.port===s.port;
+  const fb=document.getElementById(`fb-${i}`);
+  if(ok){
+    state.correct.add(i);
+    fb.className='feedback ok';
+    fb.innerHTML='Correto. Você relacionou adequadamente protocolo, função, serviço, transporte e porta.';
+  }else{
+    state.correct.delete(i);
+    fb.className='feedback bad';
+    fb.innerHTML='Ainda há algum item incorreto. Releia a situação e tente identificar primeiro <strong>o objetivo da comunicação</strong>.';
+  }
+  updateScore();
+}
+
+function makeDraggable(containerId){
+  const container=document.getElementById(containerId);
+  let dragged=null;
+  container.addEventListener('dragstart',e=>{
+    if(!e.target.classList.contains('order-item'))return;
+    dragged=e.target; dragged.classList.add('dragging');
+  });
+  container.addEventListener('dragend',e=>{
+    if(dragged)dragged.classList.remove('dragging'); dragged=null;
+  });
+  container.addEventListener('dragover',e=>{
+    e.preventDefault();
+    const after=[...container.querySelectorAll('.order-item:not(.dragging)')]
+      .find(el=>e.clientX <= el.getBoundingClientRect().left + el.offsetWidth/2);
+    const current=container.querySelector('.dragging');
+    if(current) after ? container.insertBefore(current,after) : container.appendChild(current);
+  });
+}
+makeDraggable('order6');
+makeDraggable('order7');
+
+function currentOrder(id){return [...document.querySelectorAll(`#${id} .order-item`)].map(x=>x.dataset.value)}
+
+function checkOrder6(){
+  const ok=JSON.stringify(currentOrder('order6'))===JSON.stringify(["DNS","TCP","HTTPS"]);
+  const fb=document.getElementById('feedback6');
+  if(ok){
+    state.correct.add(5);
+    fb.className='feedback ok';
+    fb.innerHTML='<strong>Sequência correta:</strong> DNS → TCP → HTTPS. Primeiro o nome é resolvido para um IP, depois a conexão TCP é estabelecida e, por fim, ocorre a comunicação Web segura.';
+  }else{
+    state.correct.delete(5);
+    fb.className='feedback bad';
+    fb.innerHTML='A sequência ainda não está correta. Pergunte: <strong>como o computador descobre o IP antes de conversar com o servidor?</strong>';
+  }
+  updateScore();
+}
+
+function checkOrder7(){
+  const ok=JSON.stringify(currentOrder('order7'))===JSON.stringify(["DHCP","DNS","TCP","HTTPS"]);
+  const fb=document.getElementById('feedback7');
+  if(ok){
+    state.correct.add(6);
+    fb.className='feedback ok';
+    fb.innerHTML='<strong>Correto:</strong> DHCP → DNS → TCP → HTTPS. O computador entra na rede, descobre o endereço do servidor, estabelece a conexão e então solicita a página.';
+  }else{
+    state.correct.delete(6);
+    fb.className='feedback bad';
+    fb.innerHTML='Revise a lógica: o notebook primeiro precisa estar configurado na rede antes de consultar nomes ou acessar o servidor.';
+  }
+  updateScore();
+}
+
+function showHint(){
+  document.getElementById('hint7').className='feedback ok';
+}
+
+function updateScore(){
+  const n=state.correct.size;
+  document.getElementById('score').textContent=`${n}/7`;
+  document.getElementById('progressBar').style.width=`${(n/7)*100}%`;
+  document.getElementById('statusText').textContent = n===7 ? 'Atividade concluída com todas as respostas corretas.' : `${n} de 7 etapas concluídas corretamente.`;
+}
+
+function finalize(){
+  const name=document.getElementById('student').value.trim() || 'Aluno(a)';
+  const n=state.correct.size;
+  alert(`${name}: você concluiu ${n} de 7 etapas corretamente.${n===7 ? '\nExcelente! Revise suas justificativas com o professor.' : '\nRevise os cenários que ainda precisam de correção.'}`);
+}
+
+function resetAll(){
+  if(!confirm('Deseja reiniciar toda a atividade?')) return;
+  document.querySelectorAll('select').forEach(x=>x.value='');
+  document.querySelectorAll('textarea').forEach(x=>x.value='');
+  document.querySelectorAll('.feedback').forEach(x=>{x.className='feedback';x.innerHTML=''});
+  state.correct.clear();
+  document.getElementById('order6').innerHTML = `
+    <div class="order-item" draggable="true" data-value="HTTPS">HTTPS</div>
+    <div class="order-item" draggable="true" data-value="DNS">DNS</div>
+    <div class="order-item" draggable="true" data-value="TCP">TCP</div>`;
+  document.getElementById('order7').innerHTML = `
+    <div class="order-item" draggable="true" data-value="HTTPS">HTTPS</div>
+    <div class="order-item" draggable="true" data-value="DHCP">DHCP</div>
+    <div class="order-item" draggable="true" data-value="TCP">TCP</div>
+    <div class="order-item" draggable="true" data-value="DNS">DNS</div>`;
+  makeDraggable('order6'); makeDraggable('order7');
+  updateScore();
+}
+</script>
+</body>
+</html>
